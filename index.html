@@ -1,51 +1,96 @@
 Privacy Policy — Spendly
 
-Effective date: 3 July 2026  ·  Tidybitz
+Effective date: 12 July 2026 · Developer: Tidybitz
 
-Spendly is a personal finance app that helps you track your spending, savings, and insurance automatically. This policy explains what data we collect, why, and how we protect it.
+Spendly is a personal finance app that helps users track transactions, budgets, savings, debts, accounts, goals, and insurance. This policy explains what data Spendly handles, why it is used, and the choices available to users.
 
-1. Data we collect
-SMS messages — Spendly reads bank and payment SMS on your device to detect transactions. SMS content is processed locally on your phone and is never sent to our servers in raw form.
-Account information — if you sign in, we store your name, email address, and profile photo provided by Google or your chosen sign-in method.
-Financial data you enter — transactions, categories, budgets, goals, debt records, and insurance policies you add manually.
-Insurance documents — PDFs you upload are sent to our AI service (via Firebase Cloud Functions) for analysis and then discarded. We do not store the raw PDF on our servers.
-Community learning signals (optional) — if you opt in, anonymised transaction classification signals (e.g. "this SMS was an expense") are queued and synced. No raw SMS text, merchant names, amounts, or personal identifiers are included.
-Usage data — Firebase Analytics collects crash reports and basic app usage events (screen views, feature taps) to help us improve the app.
-2. How we use your data
-To classify your bank SMS into expenses, income, and transfers automatically.
-To power Penny, our AI financial assistant, with context about your finances.
-To back up your financial data to your personal Firebase account so you can restore it on a new device.
-To analyse insurance policy PDFs you upload and extract key details.
-To improve our SMS classification model using anonymised, opt-in community signals.
-To send you push notifications about premium due dates and budget alerts (if you enable them).
-3. SMS permission
+1. Data Spendly handles
 
-Spendly requests the READ_SMS permission solely to detect financial transactions from your bank and payment SMS. We do not read personal messages, OTPs beyond detecting they are OTPs, or messages from contacts. SMS content is analysed on-device by our classifier. Only derived signals (transaction type, amount, merchant category) are stored — never the raw SMS text.
+SMS messages — Spendly can optionally process bank and payment SMS on your Android device to detect financial transactions. New-message capture and historical import are separate opt-in features. Messages from personal numeric phone numbers are ignored. Raw SMS bodies are processed locally and are not included in cloud backup, community-learning uploads, advertising, analytics, or AI requests. A low-confidence message may remain only on the device in the Capture Inbox for review for up to 90 days, or until the user reviews or deletes it.
 
-4. Data sharing
+Account information — if you sign in, Spendly stores your name, email address, and optional profile photo supplied through your sign-in provider.
 
-We do not sell your data. We share data only with the following sub-processors as necessary to operate the app:
+Financial records — Spendly stores transaction records and information the user enters or approves, including amount, currency, type, merchant or institution, category, timestamp, masked account identifier, budgets, goals, debts, accounts, and insurance policy records.
 
-Google Firebase — authentication, cloud storage (Firestore), crash reporting (Crashlytics), and serverless functions.
-Anthropic / Claude API — called via our Firebase Cloud Functions to power Penny chat and PDF analysis. Your financial context is sent per-session and is not used to train Anthropic's models.
-Google Play Services — for push notifications and app updates.
-5. Data retention
+Insurance analysis — when the user explicitly requests insurance document analysis, document-page images are sent through Firebase Cloud Functions to OpenAI for extraction. Spendly does not retain the source document images in Firestore.
 
-Your financial data is stored in your personal Firestore database under your user ID and remains there until you delete your account. Anonymised community learning signals are retained for model training and are not linked back to your account. Uploaded PDFs are deleted from our functions immediately after analysis.
+Community learning signals — if the user separately opts in, Spendly can upload anonymised classification votes. These signals do not contain raw SMS text, merchant names, amounts, account identifiers, or personal identifiers.
 
-6. Your rights
-Access — you can export all your data from Settings → Backup.
-Deletion — you can delete your account and all associated data from Settings → Account → Delete account.
-Opt out of community signals — toggle off "Help improve Spendly" in Settings → Community at any time.
-Revoke SMS permission — go to Android Settings → Apps → Spendly → Permissions and revoke READ_SMS. The app continues to work; only automatic SMS capture is disabled.
+Local diagnostics — parser prediction logs use one-way text hashes rather than raw messages and are retained locally for up to 30 days. Spendly does not currently use Firebase Analytics or Firebase Crashlytics.
+
+2. How Spendly uses data
+
+Spendly uses data to:
+- identify expenses, income, transfers, investments, refunds, and other financial events;
+- create transaction history, budgets, reports, reminders, and alerts;
+- provide Penny, the user-requested AI financial assistant;
+- back up approved financial records when the user enables Cloud Backup;
+- analyse insurance documents when explicitly requested;
+- improve SMS classification using anonymised, opt-in community votes; and
+- secure, maintain, and restore the user's account.
+
+Spendly does not sell personal or financial data and does not use SMS data for advertising.
+
+3. SMS permissions
+
+Spendly requests only the SMS permissions needed for its optional money-management features:
+
+READ_SMS — requested only when the user chooses to import existing bank and payment SMS history.
+
+RECEIVE_SMS — requested only when the user enables automatic capture of new bank and payment SMS.
+
+Spendly does not request permission to send or write SMS. Before either Android permission prompt, Spendly explains what the permission does, how messages are processed, and that the user can decline. Manual transaction entry remains available without SMS access. OTPs, personal conversations, and non-financial messages are not saved as transactions.
+
+Only a derived transaction record approved or accepted by Spendly can be stored. It may be synced to the user's private Firestore area only when Cloud Backup is enabled.
+
+4. Cloud services and data sharing
+
+Spendly uses these service providers only as needed to provide requested features:
+
+Google Firebase — Authentication, Firestore cloud backup, Cloud Functions, and supporting cloud delivery.
+
+OpenAI — Penny responses, transaction categorisation requested by the user, and insurance document analysis. Requests are proxied through Firebase Cloud Functions; API credentials are not stored in the Android app.
+
+Google Play Services — sign-in, app distribution, and Android platform services.
+
+Spendly does not share raw SMS bodies with these providers.
+
+5. Storage, security, and retention
+
+Most app data is stored locally in Spendly's private app storage. Cloud Backup is optional. When enabled, approved financial records are stored in Firestore under the authenticated user's UID. Firestore security rules restrict each user to their own records.
+
+Financial cloud records remain until the user deletes them or deletes the account. Local Capture Inbox items expire after 90 days. Local parser logs expire after 30 days. Anonymised community vote totals cannot be linked back to an account and may be retained to improve classification.
+
+6. User choices and rights
+
+Users can:
+- use manual transaction entry without SMS permissions;
+- independently enable or disable historical SMS import and new-message capture;
+- revoke READ_SMS or RECEIVE_SMS in Android Settings;
+- enable or disable Cloud Backup;
+- opt out of community learning and clear pending local signals;
+- edit or delete individual financial records; and
+- delete their Spendly account and associated cloud data.
+
+In-app account deletion:
+Settings → Account → Delete account.
+
+The deletion process recursively removes the user's Firestore data, Penny rate-limit records, Firebase Authentication account, and local Spendly financial data. This action cannot be undone.
+
+Web deletion request:
+If the user cannot access the app, they may email tidybitzminds@gmail.com with the subject "Delete Spendly Account" from the email address associated with the account. The request should state that deletion of the Spendly account and associated data is requested. Tidybitz may ask the user to verify account ownership before completing deletion.
+
+For access, correction, or deletion questions, users may contact the same email address.
+
 7. Children
 
-Spendly is not directed at children under 13. We do not knowingly collect data from children.
+Spendly is not directed to children under 13. We do not knowingly collect personal data from children under 13. If a parent or guardian believes a child provided data, they may contact us for deletion.
 
 8. Changes to this policy
 
-If we make material changes, we will notify you in the app and update the effective date above.
+If this policy changes materially, Spendly will update the effective date and may provide an in-app notice.
 
 9. Contact
-Tidybitzmids
+
+Tidybitz
 tidybitzminds@gmail.com
