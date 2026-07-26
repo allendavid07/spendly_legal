@@ -14,6 +14,8 @@ Financial records — Spendly stores transaction records and information the use
 
 Insurance analysis — when the user explicitly requests insurance document analysis, document-page images are sent through Firebase Cloud Functions to OpenAI for extraction. Spendly does not retain the source document images in Firestore.
 
+Receipt scanning — when the user scans a receipt, the photo is sent through Firebase Cloud Functions to OpenAI to extract the total, merchant, and date. Spendly does not retain the image server-side. The photo is stored only in the app's private storage on the device, is not included in cloud backup, and is deleted when its transaction is deleted.
+
 Community learning signals — if the user separately opts in, Spendly can upload anonymised classification votes. These signals do not contain raw SMS text, merchant names, amounts, account identifiers, or personal identifiers.
 
 Local diagnostics — parser prediction logs use one-way text hashes rather than raw messages and are retained locally for up to 30 days. Spendly does not currently use Firebase Analytics or Firebase Crashlytics.
