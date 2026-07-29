@@ -731,35 +731,41 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   <div class="scan-sheet">
     <div class="scan-handle"></div>
     <div class="scan-title">Add Product 📦</div>
-    <div class="scan-sub">Take a photo of the label for auto-fill, or skip and type manually.</div>
+    <div class="scan-sub">Type the product name — AI will look it up and fill in all details automatically.</div>
 
-    <div class="capture-area" id="captureArea" onclick="document.getElementById('productPhotoInput').click()">
-      <div class="capture-placeholder" id="capturePlaceholder">
-        <div class="capture-icon">📷</div>
-        <div class="capture-label">Tap to take product photo</div>
-        <div class="capture-sub">optional — for auto-fill & inventory thumbnail</div>
-      </div>
-      <img id="capturedProductImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>
-      <button class="capture-overlay-btn" id="retakeBtn" style="display:none" onclick="retakePhoto(event)">↺ Retake</button>
+    <!-- Name field FIRST — this is what AI uses -->
+    <div class="scan-field" style="margin-bottom:10px">
+      <label class="scan-field-label">Product Name *</label>
+      <input class="scan-field-val" id="scanName" placeholder="e.g. Minimalist 2% SA+LHA Cleanser" autocomplete="off"
+        oninput="document.getElementById('scanAnalyseBtn').style.display=this.value.trim()?'block':'none'"/>
     </div>
-    <input type="file" id="productPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="onProductPhotoCapture(event)">
 
     <div style="display:flex;gap:8px;margin-bottom:14px">
-      <button id="scanAnalyseBtn" onclick="analyseScanPhoto()" style="display:none;flex:1;background:var(--accent);color:#0c0e14;border:none;border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">🔍 Read Label with AI</button>
-      <button onclick="showManualEntry()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">✏️ Enter Manually</button>
+      <button id="scanAnalyseBtn" onclick="analyseScanPhoto()" style="display:none;flex:1;background:var(--accent);color:#0c0e14;border:none;border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">🤖 AI Lookup Details</button>
+      <button onclick="showManualEntry()" style="flex:1;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer">✏️ Fill Manually</button>
     </div>
 
     <div class="scan-ai-row" id="scanAiRow">
       <div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div>
-      <span class="ai-label">Reading product label...</span>
+      <span class="ai-label">Looking up product details...</span>
+    </div>
+
+    <!-- Photo — optional, for thumbnail only -->
+    <div style="margin-bottom:12px">
+      <label class="scan-field-label">Product Photo <span style="font-weight:400;text-transform:none">(optional — for inventory thumbnail)</span></label>
+      <div class="capture-area" id="captureArea" style="aspect-ratio:3/1;margin-bottom:0" onclick="document.getElementById('productPhotoInput').click()">
+        <div class="capture-placeholder" id="capturePlaceholder">
+          <div class="capture-icon" style="font-size:24px">📷</div>
+          <div class="capture-label" style="font-size:12px">Tap to add product photo</div>
+        </div>
+        <img id="capturedProductImg" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0"/>
+        <button class="capture-overlay-btn" id="retakeBtn" style="display:none" onclick="retakePhoto(event)">↺ Retake</button>
+      </div>
+      <input type="file" id="productPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="onProductPhotoCapture(event)">
     </div>
 
     <div class="scan-result" id="scanResult">
-      <div class="scan-result-label" id="scanResultLabel">✨ Fill in product details</div>
-      <div class="scan-field">
-        <label class="scan-field-label">Product Name *</label>
-        <input class="scan-field-val" id="scanName" placeholder="e.g. Minimalist 2% SA+LHA Cleanser"/>
-      </div>
+      <div class="scan-result-label" id="scanResultLabel">✨ AI filled — edit if needed</div>
       <div class="scan-field">
         <label class="scan-field-label">Key Ingredients / Details</label>
         <input class="scan-field-val" id="scanIngredients" placeholder="e.g. Salicylic acid 2%, LHA, Zinc"/>
@@ -1137,12 +1143,13 @@ function openScanModal(context=null){
   document.getElementById('scanAiRow').classList.remove('show');
   document.getElementById('scanSaveBtn').style.display='none';
   document.getElementById('scanAnalyseBtn').style.display='none';
-  document.getElementById('scanResultLabel').textContent='✨ AI Detected — edit if needed';
+  document.getElementById('scanResultLabel').textContent='✨ AI filled — edit if needed';
   document.getElementById('scanName').value='';
   document.getElementById('scanIngredients').value='';
   document.getElementById('scanSize').value='';
   document.querySelectorAll('.cat-btn').forEach((b,i)=>b.classList.toggle('selected',i===0));
   document.getElementById('scanOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('scanName').focus(),400);
 }
 function closeScanModal(){document.getElementById('scanOverlay').classList.remove('show');scanContext=null;}
 
@@ -1201,11 +1208,21 @@ const LINKED_IDS={
 };
 
 async function analyseScanPhoto(){
-  if(!capturedProductB64){showToast('⚠ Take a photo first');return;}
+  // Image vision via artifact proxy is not supported.
+  // Instead: use the product name the user has typed (or prompt them to type it)
+  // and use text-only AI to fill in ingredients, category, usage instructions.
+  const nameVal=document.getElementById('scanName').value.trim();
+  if(!nameVal){
+    showToast('⚠ Type the product name first, then tap Lookup');
+    document.getElementById('scanName').focus();
+    document.getElementById('scanResult').classList.add('show');
+    document.getElementById('scanSaveBtn').style.display='none';
+    document.getElementById('scanResultLabel').textContent='✏️ Type name, then tap Lookup';
+    return;
+  }
+
   document.getElementById('scanAiRow').classList.add('show');
   document.getElementById('scanAnalyseBtn').style.display='none';
-  document.getElementById('scanResult').classList.remove('show');
-  document.getElementById('scanSaveBtn').style.display='none';
 
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
@@ -1213,43 +1230,39 @@ async function analyseScanPhoto(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-6',
-        max_tokens:500,
-        messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:capturedProductB64}},
-          {type:'text',text:`Look at this skincare or haircare product image. Read the label and extract details.
-Respond with ONLY a raw JSON object — no markdown, no backticks, no explanation before or after:
-{"name":"product name","ingredients":"key actives comma separated","size":"volume e.g. 100ml","category":"Face or Hair or Body","brand":"brand name"}
-Use empty string "" for any field not visible.`}
-        ]}]
+        max_tokens:400,
+        messages:[{role:'user',content:`You are a skincare and haircare product expert. The user has a product called: "${nameVal}".
+
+Look up this product and respond ONLY with a raw JSON object, no markdown, no backticks:
+{"name":"full official product name","ingredients":"key active ingredients comma separated","size":"typical size e.g. 100ml or 30g","category":"Face or Hair or Body","usage":"one sentence on how and when to use it","concern":"what skin or hair concern it targets"}
+
+If you don't recognise the product, fill what you can from the name and use empty string for unknowns.`}]
       })
     });
 
-    if(!resp.ok){throw new Error(`HTTP ${resp.status}`);}
+    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const d=await resp.json();
-    if(d.error){throw new Error(d.error.message||'API error');}
+    if(d.error) throw new Error(d.error.message||'API error');
 
     const raw=(d.content||[]).map(b=>b.type==='text'?b.text:'').join('').trim();
-    // Aggressively clean any markdown wrapping
     const clean=raw.replace(/^[\s\S]*?(\{)/,'$1').replace(/(\})[^}]*$/,'$1');
     const result=JSON.parse(clean);
 
-    document.getElementById('scanName').value=result.name||'';
+    document.getElementById('scanName').value=result.name||nameVal;
     document.getElementById('scanIngredients').value=result.ingredients||'';
     document.getElementById('scanSize').value=result.size||'';
-    if(result.category)selectScanCat(result.category);
+    if(result.category) selectScanCat(result.category);
+    document.getElementById('scanResultLabel').textContent='✨ AI filled details — edit if needed';
     document.getElementById('scanResult').classList.add('show');
     document.getElementById('scanSaveBtn').style.display='block';
-    showToast('✓ Label read — check and confirm details');
+    showToast('✓ Product details filled — check and save');
 
   }catch(err){
-    console.error('Scan error:',err.message);
-    // Show manual form — user can fill in details themselves
-    document.getElementById('scanName').value='';
-    document.getElementById('scanIngredients').value='';
-    document.getElementById('scanSize').value='';
+    console.error('Lookup error:',err.message);
+    document.getElementById('scanResultLabel').textContent='✏️ Fill in details manually';
     document.getElementById('scanResult').classList.add('show');
     document.getElementById('scanSaveBtn').style.display='block';
-    showToast('⚠ Could not read label — please fill in manually');
+    showToast('⚠ AI lookup failed — fill in manually');
   }
   document.getElementById('scanAiRow').classList.remove('show');
 }
